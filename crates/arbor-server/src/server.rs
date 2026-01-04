@@ -135,40 +135,30 @@ async fn process_message(text: &str, graph: SharedGraph) -> Response {
     match method {
         "graph.info" => handle_info(graph, id).await,
 
-        "discover" => {
-            match serde_json::from_value::<DiscoverParams>(request.params) {
-                Ok(params) => handle_discover(graph, id, params).await,
-                Err(e) => Response::invalid_params(id, e.to_string()),
-            }
-        }
+        "discover" => match serde_json::from_value::<DiscoverParams>(request.params) {
+            Ok(params) => handle_discover(graph, id, params).await,
+            Err(e) => Response::invalid_params(id, e.to_string()),
+        },
 
-        "impact" => {
-            match serde_json::from_value::<ImpactParams>(request.params) {
-                Ok(params) => handle_impact(graph, id, params).await,
-                Err(e) => Response::invalid_params(id, e.to_string()),
-            }
-        }
+        "impact" => match serde_json::from_value::<ImpactParams>(request.params) {
+            Ok(params) => handle_impact(graph, id, params).await,
+            Err(e) => Response::invalid_params(id, e.to_string()),
+        },
 
-        "context" => {
-            match serde_json::from_value::<ContextParams>(request.params) {
-                Ok(params) => handle_context(graph, id, params).await,
-                Err(e) => Response::invalid_params(id, e.to_string()),
-            }
-        }
+        "context" => match serde_json::from_value::<ContextParams>(request.params) {
+            Ok(params) => handle_context(graph, id, params).await,
+            Err(e) => Response::invalid_params(id, e.to_string()),
+        },
 
-        "search" => {
-            match serde_json::from_value::<SearchParams>(request.params) {
-                Ok(params) => handle_search(graph, id, params).await,
-                Err(e) => Response::invalid_params(id, e.to_string()),
-            }
-        }
+        "search" => match serde_json::from_value::<SearchParams>(request.params) {
+            Ok(params) => handle_search(graph, id, params).await,
+            Err(e) => Response::invalid_params(id, e.to_string()),
+        },
 
-        "node.get" => {
-            match serde_json::from_value::<NodeGetParams>(request.params) {
-                Ok(params) => handle_node_get(graph, id, params).await,
-                Err(e) => Response::invalid_params(id, e.to_string()),
-            }
-        }
+        "node.get" => match serde_json::from_value::<NodeGetParams>(request.params) {
+            Ok(params) => handle_node_get(graph, id, params).await,
+            Err(e) => Response::invalid_params(id, e.to_string()),
+        },
 
         _ => Response::method_not_found(id, method),
     }

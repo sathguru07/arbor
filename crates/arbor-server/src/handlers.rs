@@ -65,7 +65,11 @@ pub async fn handle_discover(
         .collect();
 
     // Sort by centrality (most important first)
-    matches.sort_by(|a, b| b.centrality.partial_cmp(&a.centrality).unwrap_or(std::cmp::Ordering::Equal));
+    matches.sort_by(|a, b| {
+        b.centrality
+            .partial_cmp(&a.centrality)
+            .unwrap_or(std::cmp::Ordering::Equal)
+    });
 
     // Limit results
     matches.truncate(params.limit);
@@ -158,7 +162,11 @@ pub async fn handle_context(
         .collect();
 
     // Sort by centrality
-    matches.sort_by(|a, b| b.centrality.partial_cmp(&a.centrality).unwrap_or(std::cmp::Ordering::Equal));
+    matches.sort_by(|a, b| {
+        b.centrality
+            .partial_cmp(&a.centrality)
+            .unwrap_or(std::cmp::Ordering::Equal)
+    });
 
     // Estimate tokens and truncate
     // (Rough estimate: 4 characters per token)
