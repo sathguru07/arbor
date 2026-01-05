@@ -82,6 +82,8 @@ pub struct GraphUpdatePayload {
     pub changed_files: Vec<String>,
     /// Timestamp of the update.
     pub timestamp: u64,
+    pub nodes: Option<Vec<arbor_core::CodeNode>>,
+    pub edges: Option<Vec<arbor_graph::GraphEdge>>,
 }
 
 #[derive(Debug, Clone, serde::Serialize)]
@@ -133,6 +135,30 @@ pub struct SyncServer {
     broadcast_tx: broadcast::Sender<BroadcastMessage>,
 }
 
+/// A cloneable handle to trigger spotlight events from external components (like MCP).
+#[derive(Clone)]
+pub struct SyncServerHandle {
+    broadcast_tx: broadcast::Sender<BroadcastMessage>,
+    graph: SharedGraph,
+}
+
+impl SyncServerHandle {
+    /// Triggers a spotlight on a specific node.
+    pub fn spotlight_node(&self, node_id: &str, file: &str, line: u32) {
+        let msg = BroadcastMessage::FocusNode(FocusNodePayload {
+            node_id: node_id.to_string(),
+            file: file.to_string(),
+            line,
+        });
+        let _ = self.broadcast_tx.send(msg);
+    }
+
+    /// Returns the shared graph for context lookups.
+    pub fn graph(&self) -> SharedGraph {
+        self.graph.clone()
+    }
+}
+
 impl SyncServer {
     /// Creates a new sync server.
     pub fn new(config: SyncServerConfig) -> Self {
@@ -156,6 +182,17 @@ impl SyncServer {
         }
     }
 
+    /// Creates a sync server with a shared graph.
+    pub fn new_with_shared(config: SyncServerConfig, graph: SharedGraph) -> Self {
+        let (broadcast_tx, _) = broadcast::channel(256);
+
+        Self {
+            config,
+            graph,
+            broadcast_tx,
+        }
+    }
+
     /// Returns a handle to the shared graph.
     pub fn graph(&self) -> SharedGraph {
         self.graph.clone()
@@ -164,6 +201,14 @@ impl SyncServer {
     /// Returns a broadcast receiver for server messages.
     pub fn subscribe(&self) -> broadcast::Receiver<BroadcastMessage> {
         self.broadcast_tx.subscribe()
+    }
+
+    /// Returns a cloneable handle for triggering spotlight events.
+    pub fn handle(&self) -> SyncServerHandle {
+        SyncServerHandle {
+            broadcast_tx: self.broadcast_tx.clone(),
+            graph: self.graph.clone(),
+        }
     }
 
     /// Runs the server with file watching enabled.
@@ -286,6 +331,8 @@ async fn handle_client(
                 .duration_since(std::time::UNIX_EPOCH)
                 .unwrap()
                 .as_secs(),
+            nodes: Some(g.nodes().cloned().collect()),
+            edges: Some(g.export_edges()),
         });
 
         let json = serde_json::to_string(&snapshot)?;
@@ -505,6 +552,8 @@ async fn run_background_indexer(
                                 .duration_since(std::time::UNIX_EPOCH)
                                 .unwrap()
                                 .as_secs(),
+                            nodes: Some(g.nodes().cloned().collect()),
+                            edges: Some(g.export_edges()),
                         });
 
                         let _ = broadcast_tx.send(update);
@@ -532,6 +581,8 @@ async fn run_background_indexer(
                         .duration_since(std::time::UNIX_EPOCH)
                         .unwrap()
                         .as_secs(),
+                    nodes: Some(g.nodes().cloned().collect()),
+                    edges: Some(g.export_edges()),
                 });
 
                 let _ = broadcast_tx.send(update);
@@ -567,6 +618,8 @@ mod tests {
             file_count: 5,
             changed_files: vec!["foo.ts".to_string()],
             timestamp: 1234567890,
+            nodes: None,
+            edges: None,
         });
 
         let json = serde_json::to_string(&msg).unwrap();

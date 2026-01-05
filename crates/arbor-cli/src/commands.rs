@@ -159,6 +159,98 @@ pub async fn serve(port: u16, path: &Path) -> Result<()> {
     Ok(())
 }
 
+/// Start the Arbor Visualizer.
+pub async fn viz(path: &Path) -> Result<()> {
+    println!("{}", "Starting Arbor Visualizer stack...".cyan());
+
+    // 1. Index Codebase
+    let result = index_directory(path)?;
+    let mut graph = result.graph;
+
+    // Compute centrality for better initial layout
+    println!("Computing centrality...");
+    let scores = compute_centrality(&graph, 20, 0.85);
+    graph.set_centrality(scores.into_map());
+
+    println!(
+        "{} Indexed {} files ({} nodes)",
+        "✓".green(),
+        result.files_indexed,
+        result.nodes_extracted
+    );
+
+    // 2. Start API Server (JSON-RPC)
+    let rpc_port = 7432;
+    let rpc_addr = format!("127.0.0.1:{}", rpc_port).parse()?;
+    let rpc_config = ServerConfig { addr: rpc_addr };
+    let arbor_server = ArborServer::new(graph, rpc_config);
+    let shared_graph = arbor_server.graph();
+
+    // 3. Start Sync Server (WebSocket Broadcast)
+    let sync_port = 8080;
+    let sync_addr = format!("127.0.0.1:{}", sync_port).parse()?;
+    let sync_config = arbor_server::SyncServerConfig {
+        addr: sync_addr,
+        watch_path: path.to_path_buf(),
+        debounce_ms: 1000,
+        extensions: vec![
+            "ts".to_string(),
+            "tsx".to_string(),
+            "rs".to_string(),
+            "py".to_string(),
+            "dart".to_string(),
+        ],
+    };
+    let sync_server = arbor_server::SyncServer::new_with_shared(sync_config, shared_graph.clone());
+
+    // Spawn servers
+    println!("{} RPC Server on port {}", "✓".green(), rpc_port);
+    println!("{} Sync Server on port {}", "✓".green(), sync_port);
+
+    tokio::spawn(async move {
+        if let Err(e) = arbor_server.run().await {
+            eprintln!("RPC Server error: {}", e);
+        }
+    });
+
+    tokio::spawn(async move {
+        if let Err(e) = sync_server.run().await {
+            eprintln!("Sync Server error: {}", e);
+        }
+    });
+
+    // 4. Launch Visualizer
+    let viz_dir = path.join("visualizer");
+    if viz_dir.exists() {
+        println!("{}", "Launching Flutter Visualizer...".cyan());
+
+        #[cfg(target_os = "windows")]
+        let cmd = "flutter.bat";
+        #[cfg(not(target_os = "windows"))]
+        let cmd = "flutter";
+
+        let status = std::process::Command::new(cmd)
+            .arg("run")
+            .arg("-d")
+            .arg("windows")
+            .current_dir(&viz_dir)
+            .status();
+
+        match status {
+            Ok(_) => println!("Visualizer closed."),
+            Err(e) => println!("Failed to launch visualizer: {}", e),
+        }
+    } else {
+        println!(
+            "{}",
+            "Visualizer source not found in target directory.".yellow()
+        );
+        println!("Please run 'arbor viz' from the root of the arbor repo, or start the visualizer manually.");
+    }
+
+    Ok(())
+}
+
 /// Export the graph to JSON.
 pub fn export(path: &Path, output: &Path) -> Result<()> {
     let result = index_directory(path)?;
@@ -185,6 +277,180 @@ pub fn status(path: &Path) -> Result<()> {
     println!("  {} {}", "Nodes:".dimmed(), result.nodes_extracted);
     println!("  {} {}", "Edges:".dimmed(), result.graph.edge_count());
     println!("  {} TypeScript, Rust, Python", "Languages:".dimmed());
+
+    Ok(())
+}
+
+/// Start the Agentic Bridge (MCP + Viz).
+pub async fn bridge(path: &Path, launch_viz: bool) -> Result<()> {
+    use arbor_mcp::McpServer;
+
+    eprintln!("{} Arbor Bridge (MCP Mode)", "🔗".bold().cyan());
+
+    // 1. Index Codebase
+    eprintln!("{} Indexing codebase...", "⏳".yellow());
+    let result = index_directory(path)?;
+    let mut graph = result.graph;
+
+    // Compute centrality
+    eprintln!("{} Computing centrality...", "🧠".yellow());
+    let scores = compute_centrality(&graph, 20, 0.85);
+    graph.set_centrality(scores.into_map());
+
+    eprintln!(
+        "{} Indexed {} files ({} nodes)",
+        "✓".green(),
+        result.files_indexed,
+        result.nodes_extracted
+    );
+
+    // 2. Start Servers (Background)
+    let rpc_port = 7432;
+    let sync_port = 8080;
+
+    let rpc_config = ServerConfig {
+        addr: format!("127.0.0.1:{}", rpc_port).parse()?,
+    };
+
+    let arbor_server = ArborServer::new(graph, rpc_config);
+    let shared_graph = arbor_server.graph();
+
+    let sync_config = arbor_server::SyncServerConfig {
+        addr: format!("127.0.0.1:{}", sync_port).parse()?,
+        watch_path: path.to_path_buf(),
+        debounce_ms: 1000,
+        extensions: vec![
+            "rs".to_string(),
+            "ts".to_string(),
+            "py".to_string(),
+            "dart".to_string(),
+        ],
+    };
+
+    let sync_server = arbor_server::SyncServer::new_with_shared(sync_config, shared_graph.clone());
+
+    // Get the spotlight handle BEFORE moving sync_server into the spawned task
+    let spotlight_handle = sync_server.handle();
+
+    tokio::spawn(async move {
+        if let Err(e) = arbor_server.run().await {
+            eprintln!("RPC Server error: {}", e);
+        }
+    });
+
+    tokio::spawn(async move {
+        if let Err(e) = sync_server.run().await {
+            eprintln!("Sync Server error: {}", e);
+        }
+    });
+
+    eprintln!(
+        "{} Servers Ready (RPC {}, Sync {})",
+        "✓".green(),
+        rpc_port,
+        sync_port
+    );
+    eprintln!("🔦 Spotlight mode active - Visualizer will track AI focus");
+
+    // 3. Optionally launch the visualizer
+    if launch_viz {
+        let viz_dir = path.join("visualizer");
+        if viz_dir.exists() {
+            eprintln!("{} Launching Flutter Visualizer...", "🚀".cyan());
+
+            #[cfg(target_os = "windows")]
+            let cmd = "flutter.bat";
+            #[cfg(not(target_os = "windows"))]
+            let cmd = "flutter";
+
+            // Spawn visualizer in background
+            std::process::Command::new(cmd)
+                .arg("run")
+                .arg("-d")
+                .arg("windows")
+                .current_dir(&viz_dir)
+                .spawn()
+                .ok();
+        } else {
+            eprintln!("{} Visualizer directory not found", "⚠".yellow());
+        }
+    }
+
+    eprintln!("🚀 Starting MCP Server on Stdio... (Press Ctrl+C to stop)");
+
+    // 3. Start MCP Server (Main Thread) WITH Spotlight capability
+    // IMPORTANT: All logging MUST be to stderr from here on.
+    let mcp = McpServer::with_spotlight(shared_graph, spotlight_handle);
+    mcp.run_stdio().await?;
+
+    Ok(())
+}
+
+/// Check system health and environment.
+pub async fn check_health() -> Result<()> {
+    use std::net::TcpListener;
+
+    println!("{}", "🔍 Arbor Health Check".cyan().bold());
+    println!("{}", "═".repeat(50));
+
+    let mut all_ok = true;
+
+    // 1. Check Cargo.toml presence (Rust workspace)
+    let cargo_exists = Path::new("Cargo.toml").exists();
+    if cargo_exists {
+        println!("{} Rust workspace detected", "✓".green());
+    } else {
+        println!(
+            "{} No Cargo.toml found (not in a Rust project)",
+            "⚠".yellow()
+        );
+    }
+
+    // 2. Check port 8080 availability (SyncServer)
+    match TcpListener::bind("127.0.0.1:8080") {
+        Ok(_) => {
+            println!("{} Port 8080 is available", "✓".green());
+        }
+        Err(_) => {
+            println!(
+                "{} Port 8080 is in use (SyncServer may be running)",
+                "•".blue()
+            );
+        }
+    }
+
+    // 3. Check visualizer directory
+    let viz_exists = Path::new("visualizer").exists();
+    if viz_exists {
+        println!("{} Visualizer directory found", "✓".green());
+    } else {
+        println!("{} Visualizer not found in current directory", "⚠".yellow());
+    }
+
+    // 4. Check VS Code extension
+    let ext_exists = Path::new("extensions/arbor-vscode").exists();
+    if ext_exists {
+        println!("{} VS Code extension found", "✓".green());
+    } else {
+        println!("{} VS Code extension not found", "⚠".yellow());
+    }
+
+    // 5. Check .arbor directory
+    let arbor_init = Path::new(".arbor").exists();
+    if arbor_init {
+        println!("{} Arbor initialized (.arbor/ exists)", "✓".green());
+    } else {
+        println!("{} Arbor not initialized (run 'arbor init')", "⚠".yellow());
+        all_ok = false;
+    }
+
+    println!("{}", "═".repeat(50));
+
+    if all_ok {
+        println!("{} All systems operational", "🚀".green().bold());
+    } else {
+        println!("{}", "⚠  Some checks require attention".yellow());
+    }
 
     Ok(())
 }

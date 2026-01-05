@@ -30,7 +30,7 @@ class GraphPainter extends CustomPainter {
     final nodeMap = {for (var n in nodes) n.id: n};
 
     // Draw edges first (below nodes)
-    _drawEdges(canvas, nodeMap);
+    _drawEdges(canvas, nodeMap, size);
 
     // Draw nodes
     for (final node in nodes) {
@@ -38,24 +38,33 @@ class GraphPainter extends CustomPainter {
     }
   }
 
-  void _drawEdges(Canvas canvas, Map<String, GraphNode> nodeMap) {
+  void _drawEdges(Canvas canvas, Map<String, GraphNode> nodeMap, Size size) {
+    final screenCenter = size.center(Offset.zero);
+    final maxDist = size.shortestSide * 0.8;
+
     for (final edge in edges) {
-      final from = nodeMap[edge.from];
-      final to = nodeMap[edge.to];
+      final from = nodeMap[edge.source];
+      final to = nodeMap[edge.target];
       if (from == null || to == null) continue;
-
-      final isHighlighted = edge.from == selectedNodeId || 
-                           edge.to == selectedNodeId;
-
-      final paint = Paint()
-        ..color = isHighlighted 
-            ? ArborTheme.function.withOpacity(0.8)
-            : ArborTheme.border.withOpacity(0.4)
-        ..strokeWidth = isHighlighted ? 2.0 : 1.0
-        ..style = PaintingStyle.stroke;
 
       final start = _transformPoint(from.x, from.y);
       final end = _transformPoint(to.x, to.y);
+
+      // Edge Fading: Depth of field effect
+      final edgeCenter = Offset((start.dx + end.dx) / 2, (start.dy + end.dy) / 2);
+      final dist = (edgeCenter - screenCenter).distance;
+      // Fade out as it gets further from center
+      final depthOpacity = (1.0 - (dist / maxDist)).clamp(0.1, 1.0);
+
+      final isHighlighted = edge.source == selectedNodeId || 
+                           edge.target == selectedNodeId;
+
+      final paint = Paint()
+        ..color = isHighlighted 
+            ? ArborTheme.function.withValues(alpha:0.8 * depthOpacity)
+            : ArborTheme.border.withValues(alpha:0.4 * depthOpacity)
+        ..strokeWidth = isHighlighted ? 2.0 : 1.0
+        ..style = PaintingStyle.stroke;
 
       // Draw a curved line for visual interest
       final controlX = (start.dx + end.dx) / 2;
@@ -104,17 +113,25 @@ class GraphPainter extends CustomPainter {
 
     final color = ArborTheme.colorForKind(node.kind);
 
-    // Draw glow effect
+    // Cinematic Bloom (Persistent for important nodes)
+    if (node.centrality > 0.3) {
+       final bloomPaint = Paint()
+        ..color = color.withValues(alpha:0.4)
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 15);
+       canvas.drawCircle(center, radius * 1.5, bloomPaint);
+    }
+
+    // Draw glow effect (Interactive)
     if (isSelected || isHovered) {
       final glowPaint = Paint()
-        ..color = color.withOpacity(0.3)
+        ..color = color.withValues(alpha:0.3)
         ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 20);
       canvas.drawCircle(center, radius * 2, glowPaint);
     }
 
     // Draw outer ring
     final ringPaint = Paint()
-      ..color = color.withOpacity(0.5)
+      ..color = color.withValues(alpha:0.5)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 2;
     canvas.drawCircle(center, radius, ringPaint);

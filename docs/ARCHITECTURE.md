@@ -2,56 +2,67 @@
 
 This document describes the high-level architecture of Arbor and how its components interact.
 
-## System Overview
+## System Overview: The Unified Nervous System
+
+Arbor is a "Unified Nervous System" that connects your codebase, AI agents, and development environment.
 
 ```
-                                    ┌─────────────────┐
-                                    │   IDE / Agent   │
-                                    └────────┬────────┘
-                                             │
-                                    WebSocket (Arbor Protocol)
-                                             │
-                                             ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                        arbor-server                              │
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────────┐  │
-│  │  Protocol   │  │   Query     │  │      Ranking            │  │
-│  │  Handler    │  │   Router    │  │      Engine             │  │
-│  └─────────────┘  └─────────────┘  └─────────────────────────┘  │
-└─────────────────────────────────────────────────────────────────┘
-                                │
-                                ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                        arbor-graph                               │
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────────┐  │
-│  │   Nodes     │  │   Edges     │  │      Indexes            │  │
-│  │  (petgraph) │  │  (typed)    │  │   (name, file, kind)    │  │
-│  └─────────────┘  └─────────────┘  └─────────────────────────┘  │
-└─────────────────────────────────────────────────────────────────┘
-                                │
-                                ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                        arbor-watcher                             │
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────────┐  │
-│  │  File       │  │   Delta     │  │      Cache              │  │
-│  │  Watcher    │  │   Engine    │  │   (unchanged nodes)     │  │
-│  └─────────────┘  └─────────────┘  └─────────────────────────┘  │
-└─────────────────────────────────────────────────────────────────┘
-                                │
-                                ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                        arbor-core                                │
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────────┐  │
-│  │ Tree-sitter │  │  Language   │  │      Node               │  │
-│  │   Parser    │  │  Registry   │  │      Extraction         │  │
-│  └─────────────┘  └─────────────┘  └─────────────────────────┘  │
-└─────────────────────────────────────────────────────────────────┘
-                                │
-                                ▼
-                        ┌───────────────┐
-                        │   Codebase    │
-                        └───────────────┘
+                    ┌─────────────────────────────────────────────────────────┐
+                    │              THE UNIFIED NERVOUS SYSTEM                 │
+                    └─────────────────────────────────────────────────────────┘
+                                              │
+          ┌───────────────────────────────────┼───────────────────────────────────┐
+          │                                   │                                   │
+          ▼                                   ▼                                   ▼
+   ┌─────────────┐                   ┌─────────────────┐                 ┌─────────────┐
+   │   VS Code   │◄──── Spotlight ──►│  Arbor Bridge   │◄── Spotlight ──►│  Visualizer │
+   │  Extension  │      Protocol     │  (MCP Server)   │     Protocol    │   (Flutter) │
+   └─────────────┘                   └────────┬────────┘                 └─────────────┘
+          │                                   │                                   │
+          │ Golden Highlight                  │ Architectural Brief              │ Camera
+          │ (#FFD700)                         │ (Markdown Tables)                │ Animation
+          │                                   │                                   │
+          └───────────────────────────────────┼───────────────────────────────────┘
+                                              │
+                                     ┌────────┴────────┐
+                                     │   SyncServer    │
+                                     │  (WebSocket)    │
+                                     │  ws://8080      │
+                                     └────────┬────────┘
+                                              │
+                    ┌─────────────────────────┼─────────────────────────┐
+                    │                         │                         │
+                    ▼                         ▼                         ▼
+           ┌─────────────┐           ┌─────────────┐           ┌─────────────┐
+           │arbor-server │           │ arbor-graph │           │arbor-watcher│
+           │  (JSON-RPC) │           │ (petgraph)  │           │  (notify)   │
+           └─────────────┘           └─────────────┘           └─────────────┘
+                                              │
+                                              ▼
+                                     ┌─────────────────┐
+                                     │   arbor-core    │
+                                     │  (Tree-sitter)  │
+                                     │   144ms parse   │
+                                     └────────┬────────┘
+                                              │
+                                              ▼
+                                     ┌─────────────────┐
+                                     │    Codebase     │
+                                     │  (Your Files)   │
+                                     └─────────────────┘
 ```
+
+### The Flow
+
+1. **Parsing**: `arbor-core` parses your codebase with Tree-sitter (~144ms for 10k lines)
+2. **Graphing**: `arbor-graph` builds a dependency graph with petgraph
+3. **Watching**: `arbor-watcher` detects file changes and triggers re-indexing
+4. **Serving**: `arbor-server` exposes the graph via JSON-RPC over WebSocket
+5. **Syncing**: `SyncServer` broadcasts real-time updates to all clients
+6. **Bridging**: `arbor-mcp` enables AI agents to query the graph
+7. **Spotlighting**: When AI queries a node, the Spotlight Protocol broadcasts focus events
+8. **Visualizing**: Flutter visualizer animates to the spotlighted node
+9. **Highlighting**: VS Code extension highlights the corresponding line
 
 ## Crate Responsibilities
 

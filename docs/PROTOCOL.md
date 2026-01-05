@@ -324,3 +324,60 @@ Subscribe to graph changes.
   }
 }
 ```
+
+## Spotlight Protocol
+
+The Spotlight Protocol enables real-time synchronization between AI agents, the Arbor Visualizer, and local development environments.
+
+### Transport
+
+| Property | Value |
+|----------|-------|
+| **Endpoint** | `ws://127.0.0.1:8080` (SyncServer) |
+| **Latency Target** | <50ms for UI triggers |
+| **Highlight System** | Golden Highlight (`#FFD700`) |
+
+### Message: `FocusNode`
+
+Broadcasts when an AI tool focuses on a specific node.
+
+**Payload:**
+
+```json
+{
+  "type": "FocusNode",
+  "payload": {
+    "node_id": "auth_controller_validate",
+    "file": "src/controllers/auth.rs",
+    "line": 45
+  }
+}
+```
+
+### Arbor Visualizer (Flutter)
+
+| Component | Specification |
+|-----------|--------------|
+| **AnimationController** | 600ms duration |
+| **Easing** | `easeOutCubic` |
+| **Haptics** | Medium impact on arrival |
+| **State** | `spotlightNodeId` in `GraphState` |
+
+### VS Code Extension
+
+| Feature | Behavior |
+|---------|----------|
+| **Spotlight Sync** | Highlights line when AI focuses |
+| **Keyboard Shortcut** | `Ctrl+Shift+A` (Toggle Visualizer) |
+| **Context Menu** | "Show in Arbor Visualizer" |
+| **Status Bar** | Connection indicator |
+
+### Centrality Metric (Impact Level)
+
+Uses PageRank algorithm to determine symbol importance.
+
+| Range | Classification |
+|-------|---------------|
+| > 0.8 | High Impact (heavily imported/referenced) |
+| 0.3-0.8 | Medium Impact |
+| < 0.3 | Low Impact (leaf nodes) |

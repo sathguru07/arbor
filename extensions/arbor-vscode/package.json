@@ -1,0 +1,73 @@
+{
+  "name": "arbor-vscode",
+  "displayName": "Arbor - Logic Forest",
+  "description": "Connect VS Code to the Arbor Logic Forest for AI-aware code navigation",
+  "version": "0.1.0",
+  "publisher": "arbor",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "arbor.showInVisualizer",
+        "title": "Show in Arbor Visualizer"
+      },
+      {
+        "command": "arbor.connect",
+        "title": "Arbor: Connect to Server"
+      },
+      {
+        "command": "arbor.toggleVisualizer",
+        "title": "Arbor: Toggle Visualizer"
+      }
+    ],
+    "keybindings": [
+      {
+        "command": "arbor.toggleVisualizer",
+        "key": "ctrl+shift+a",
+        "mac": "cmd+shift+a"
+      }
+    ],
+    "menus": {
+      "editor/context": [
+        {
+          "command": "arbor.showInVisualizer",
+          "when": "editorTextFocus",
+          "group": "navigation"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "Arbor",
+      "properties": {
+        "arbor.serverUrl": {
+          "type": "string",
+          "default": "ws://127.0.0.1:8080",
+          "description": "WebSocket URL for the Arbor Sync Server"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "@types/vscode": "^1.85.0",
+    "@types/ws": "^8.18.1",
+    "typescript": "^5.3.0"
+  },
+  "dependencies": {
+    "ws": "^8.14.0"
+  }
+}

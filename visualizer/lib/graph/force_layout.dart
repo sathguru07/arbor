@@ -1,127 +1,155 @@
 import 'dart:math';
 import '../core/providers.dart';
 
-/// Force-directed layout algorithm.
+/// Force-directed layout algorithm with file-based clustering.
 ///
-/// Positions nodes using a spring simulation where:
-/// - Edges act as springs pulling connected nodes together
-/// - All nodes repel each other to prevent overlap
-/// - The result is an organic, tree-like arrangement
+/// "The Multi-Layer Logic Forest"
+/// - Files act as gravity wells (clusters).
+/// - Symbols orbit their parent file.
+/// - Edges represent relations.
 class ForceLayout {
-  // Simulation parameters - tuned for visual appeal
-  static const double repulsion = 5000;
-  static const double attraction = 0.1;
-  static const double damping = 0.9;
-  static const double minDistance = 80;
+  // Physics Parameters
+  static const double repulsion = 8000;
+  static const double attraction = 0.08;
+  static const double clusterGravity = 0.5; // Pull towards file center
+  static const double damping = 0.92;
+  static const double minDistance = 60;
+  static const double maxForce = 50;
 
   /// Runs one iteration of the force simulation.
-  ///
-  /// Call this in an animation loop for smooth results.
-  /// Returns true if the simulation is still settling.
   static bool update(List<GraphNode> nodes, List<GraphEdge> edges, double dt) {
     if (nodes.isEmpty) return false;
 
-    // Build a map for quick lookups
+    // 1. Build rapid lookups
     final nodeMap = {for (var n in nodes) n.id: n};
+    final nodesByFile = <String, List<GraphNode>>{};
+    
+    // Group by file for clustering
+    for (var node in nodes) {
+      nodesByFile.putIfAbsent(node.file, () => []).add(node);
+    }
 
-    // Calculate repulsive forces between all pairs
+    // 2. File Clustering (Gravity Wells)
+    // Calculate centroid of each file and pull nodes towards it
+    nodesByFile.forEach((file, fileNodes) {
+      if (fileNodes.length <= 1) return;
+
+      var cx = 0.0;
+      var cy = 0.0;
+      for (var n in fileNodes) {
+        cx += n.x;
+        cy += n.y;
+      }
+      cx /= fileNodes.length;
+      cy /= fileNodes.length;
+
+      for (var n in fileNodes) {
+        final dx = cx - n.x;
+        final dy = cy - n.y;
+        final dist = sqrt(dx * dx + dy * dy);
+        
+        if (dist > minDistance / 2) {
+          final force = dist * clusterGravity;
+          n.vx += (dx / dist) * force * dt;
+          n.vy += (dy / dist) * force * dt;
+        }
+      }
+    });
+
+    // 3. Repulsion (Nodes push apart)
+    // Optimization: Spatial hashing or Quadtree could be used here for O(N log N)
+    // For < 1000 nodes, O(N^2) is acceptable on desktop
     for (var i = 0; i < nodes.length; i++) {
-      for (var j = i + 1; j < nodes.length; j++) {
         final a = nodes[i];
+      for (var j = i + 1; j < nodes.length; j++) {
         final b = nodes[j];
 
-        var dx = b.x - a.x;
-        var dy = b.y - a.y;
-        var dist = sqrt(dx * dx + dy * dy);
+        var dx = a.x - b.x;
+        var dy = a.y - b.y;
+        var distSq = dx * dx + dy * dy;
 
-        if (dist < 1) {
-          // Nudge overlapping nodes apart randomly
-          dx = (Random().nextDouble() - 0.5) * 10;
-          dy = (Random().nextDouble() - 0.5) * 10;
-          dist = sqrt(dx * dx + dy * dy);
+        // Prevent division by zero and extreme forces
+        if (distSq < 1) {
+            dx = (Random().nextDouble() - 0.5);
+            dy = (Random().nextDouble() - 0.5);
+            distSq = 1;
         }
 
-        // Coulomb's law: F = k / d^2
-        final force = repulsion / (dist * dist);
+        final force = repulsion / distSq;
+        final dist = sqrt(distSq);
         final fx = (dx / dist) * force;
         final fy = (dy / dist) * force;
 
-        a.vx -= fx;
-        a.vy -= fy;
-        b.vx += fx;
-        b.vy += fy;
+        a.vx += fx * dt;
+        a.vy += fy * dt;
+        b.vx -= fx * dt;
+        b.vy -= fy * dt;
       }
     }
 
-    // Calculate attractive forces along edges
+    // 4. Edge Attraction (Springs)
     for (final edge in edges) {
-      final a = nodeMap[edge.from];
-      final b = nodeMap[edge.to];
+      final a = nodeMap[edge.source]; // Note: used 'source'/'target' from protocol
+      final b = nodeMap[edge.target];
       if (a == null || b == null) continue;
+      if (a == b) continue;
 
       final dx = b.x - a.x;
       final dy = b.y - a.y;
       final dist = sqrt(dx * dx + dy * dy);
 
       if (dist > minDistance) {
-        // Hooke's law: F = k * x
         final force = (dist - minDistance) * attraction;
-        final fx = (dx / dist) * force;
-        final fy = (dy / dist) * force;
+        // Cap force
+        final f = min(force, maxForce);
+        
+        final fx = (dx / dist) * f;
+        final fy = (dy / dist) * f;
 
-        a.vx += fx;
-        a.vy += fy;
-        b.vx -= fx;
-        b.vy -= fy;
+        a.vx += fx * dt;
+        a.vy += fy * dt;
+        b.vx -= fx * dt;
+        b.vy -= fy * dt;
       }
     }
 
-    // Apply velocity with damping
-    var totalMovement = 0.0;
+    // 5. Integration (Apply Velocity)
+    var totalEnergy = 0.0;
     for (final node in nodes) {
+      // Damping
       node.vx *= damping;
       node.vy *= damping;
 
+      // Update position
       node.x += node.vx * dt;
       node.y += node.vy * dt;
 
-      totalMovement += node.vx.abs() + node.vy.abs();
+      totalEnergy += node.vx * node.vx + node.vy * node.vy;
     }
 
-    // Return true if still moving significantly
-    return totalMovement > 0.5;
+    // Return true if simulation is active (energy > threshold)
+    return totalEnergy > 0.1;
   }
 
   /// Centers the graph in the given bounds.
-  static void centerNodes(
-    List<GraphNode> nodes,
-    double width,
-    double height,
-  ) {
+  static void centerNodes(List<GraphNode> nodes, double width, double height) {
     if (nodes.isEmpty) return;
-
-    // Find bounding box
-    var minX = double.infinity;
-    var maxX = double.negativeInfinity;
-    var minY = double.infinity;
-    var maxY = double.negativeInfinity;
-
-    for (final node in nodes) {
-      minX = min(minX, node.x);
-      maxX = max(maxX, node.x);
-      minY = min(minY, node.y);
-      maxY = max(maxY, node.y);
+    
+    var cx = 0.0;
+    var cy = 0.0;
+    for (var node in nodes) {
+      cx += node.x;
+      cy += node.y;
     }
-
-    // Calculate offset to center
-    final graphCenterX = (minX + maxX) / 2;
-    final graphCenterY = (minY + maxY) / 2;
-    final offsetX = width / 2 - graphCenterX;
-    final offsetY = height / 2 - graphCenterY;
-
-    for (final node in nodes) {
-      node.x += offsetX;
-      node.y += offsetY;
+    cx /= nodes.length;
+    cy /= nodes.length;
+    
+    final dx = width / 2 - cx;
+    final dy = height / 2 - cy;
+    
+    for (var node in nodes) {
+      node.x += dx;
+      node.y += dy;
     }
   }
 }

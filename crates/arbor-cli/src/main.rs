@@ -82,6 +82,28 @@ enum Commands {
         #[arg(default_value = ".")]
         path: PathBuf,
     },
+
+    /// Start the Arbor Visualizer
+    Viz {
+        /// Path to visualize (defaults to current directory)
+        #[arg(default_value = ".")]
+        path: PathBuf,
+    },
+
+    /// Start the Agentic Bridge (MCP + Viz)
+    Bridge {
+        /// Path to index (defaults to current directory)
+        #[arg(default_value = ".")]
+        path: PathBuf,
+
+        /// Also launch the Flutter visualizer
+        #[arg(long)]
+        viz: bool,
+    },
+
+    /// Check system health and environment
+    #[command(hide = true)]
+    CheckHealth,
 }
 
 #[tokio::main]
@@ -91,7 +113,11 @@ async fn main() {
     // Set up logging
     let filter = if cli.verbose { "debug" } else { "info" };
     tracing_subscriber::registry()
-        .with(tracing_subscriber::fmt::layer().with_target(false))
+        .with(
+            tracing_subscriber::fmt::layer()
+                .with_writer(std::io::stderr)
+                .with_target(false),
+        )
         .with(tracing_subscriber::EnvFilter::new(filter))
         .init();
 
@@ -102,6 +128,9 @@ async fn main() {
         Commands::Serve { port, path } => commands::serve(port, &path).await,
         Commands::Export { output, path } => commands::export(&path, &output),
         Commands::Status { path } => commands::status(&path),
+        Commands::Viz { path } => commands::viz(&path).await,
+        Commands::Bridge { path, viz } => commands::bridge(&path, viz).await,
+        Commands::CheckHealth => commands::check_health().await,
     };
 
     if let Err(e) = result {

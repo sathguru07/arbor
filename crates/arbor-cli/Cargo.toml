@@ -20,6 +20,7 @@ arbor-core = { path = "../arbor-core" }
 arbor-graph = { path = "../arbor-graph" }
 arbor-watcher = { path = "../arbor-watcher" }
 arbor-server = { path = "../arbor-server" }
+arbor-mcp = { path = "../arbor-mcp" }
 
 clap = { version = "4.0", features = ["derive"] }
 colored = "2.0"

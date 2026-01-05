@@ -1,18 +1,14 @@
-import 'dart:math';
-import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../core/providers.dart';
 import '../core/theme.dart';
-import '../graph/force_layout.dart';
-import '../graph/graph_painter.dart';
+import '../graph/graph_widget.dart';
 
 /// The main visualization view - the Logic Forest.
 ///
-/// This is where the magic happens. Nodes float in space, connected
-/// by glowing edges. Users can pan, zoom, and select nodes to explore
-/// the code structure.
+/// Wraps the interactive GraphWidget with UI overlays like the Inspector,
+/// Search Bar, and Status Bar.
 class ForestView extends ConsumerStatefulWidget {
   const ForestView({super.key});
 
@@ -20,90 +16,19 @@ class ForestView extends ConsumerStatefulWidget {
   ConsumerState<ForestView> createState() => _ForestViewState();
 }
 
-class _ForestViewState extends ConsumerState<ForestView>
-    with TickerProviderStateMixin {
-  // Transform state
-  Offset _offset = Offset.zero;
-  double _scale = 1.0;
-
-  // Interaction state
-  String? _hoveredNodeId;
-  Offset? _lastPanPosition;
-  GraphNode? _draggedNode;
-
-  // Physics simulation
-  late AnimationController _simulationController;
-  bool _isSimulating = false;
-
+class _ForestViewState extends ConsumerState<ForestView> {
   // Search
   final _searchController = TextEditingController();
-  bool _showSearch = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _simulationController = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 60),
-    )..addListener(_runSimulation);
-
-    // Connect to server on start
-    Future.microtask(() {
-      ref.read(graphProvider.notifier).connect('ws://127.0.0.1:7432');
-    });
-  }
 
   @override
   void dispose() {
-    _simulationController.dispose();
     _searchController.dispose();
     super.dispose();
-  }
-
-  void _runSimulation() {
-    final state = ref.read(graphProvider);
-    if (state.nodes.isEmpty) return;
-
-    final stillMoving = ForceLayout.update(
-      state.nodes,
-      state.edges,
-      0.016, // ~60fps
-    );
-
-    if (!stillMoving && _isSimulating) {
-      _simulationController.stop();
-      _isSimulating = false;
-    }
-
-    setState(() {});
-  }
-
-  void _startSimulation() {
-    if (!_isSimulating) {
-      _isSimulating = true;
-      _simulationController.repeat();
-    }
   }
 
   void _handleSearch(String query) {
     if (query.isEmpty) return;
     ref.read(graphProvider.notifier).search(query);
-    _startSimulation();
-  }
-
-  GraphNode? _hitTest(Offset position) {
-    final state = ref.read(graphProvider);
-    for (final node in state.nodes.reversed) {
-      final nodePos = Offset(
-        node.x * _scale + _offset.dx,
-        node.y * _scale + _offset.dy,
-      );
-      final radius = 8 + node.centrality * 16;
-      if ((position - nodePos).distance < radius * _scale) {
-        return node;
-      }
-    }
-    return null;
   }
 
   @override
@@ -117,66 +42,8 @@ class _ForestViewState extends ConsumerState<ForestView>
           // Background gradient for depth
           _buildBackground(),
 
-          // Graph canvas
-          Listener(
-            onPointerSignal: (event) {
-              if (event is PointerScrollEvent) {
-                setState(() {
-                  final delta = event.scrollDelta.dy > 0 ? 0.9 : 1.1;
-                  _scale = (_scale * delta).clamp(0.2, 3.0);
-                });
-              }
-            },
-            child: GestureDetector(
-              onPanStart: (details) {
-                final node = _hitTest(details.localPosition);
-                if (node != null) {
-                  _draggedNode = node;
-                } else {
-                  _lastPanPosition = details.localPosition;
-                }
-              },
-              onPanUpdate: (details) {
-                if (_draggedNode != null) {
-                  setState(() {
-                    _draggedNode!.x += details.delta.dx / _scale;
-                    _draggedNode!.y += details.delta.dy / _scale;
-                  });
-                } else if (_lastPanPosition != null) {
-                  setState(() {
-                    _offset += details.delta;
-                  });
-                }
-              },
-              onPanEnd: (_) {
-                _draggedNode = null;
-                _lastPanPosition = null;
-                _startSimulation();
-              },
-              onTapUp: (details) {
-                final node = _hitTest(details.localPosition);
-                ref.read(graphProvider.notifier).selectNode(node?.id);
-              },
-              child: MouseRegion(
-                onHover: (event) {
-                  final node = _hitTest(event.localPosition);
-                  setState(() => _hoveredNodeId = node?.id);
-                },
-                onExit: (_) => setState(() => _hoveredNodeId = null),
-                child: CustomPaint(
-                  painter: GraphPainter(
-                    nodes: state.nodes,
-                    edges: state.edges,
-                    selectedNodeId: state.selectedNodeId,
-                    hoveredNodeId: _hoveredNodeId,
-                    offset: _offset,
-                    scale: _scale,
-                  ),
-                  size: Size.infinite,
-                ),
-              ),
-            ),
-          ),
+          // The Interactive Graph
+          const GraphWidget(),
 
           // Top bar
           _buildTopBar(state),
@@ -190,13 +57,39 @@ class _ForestViewState extends ConsumerState<ForestView>
           // Loading overlay
           if (state.isLoading)
             Container(
-              color: ArborTheme.background.withOpacity(0.7),
+              color: ArborTheme.background.withValues(alpha:0.7),
               child: const Center(
                 child: CircularProgressIndicator(
                   color: ArborTheme.function,
                 ),
               ),
             ),
+          
+          // Error overlay
+          if (state.error != null)
+             Positioned(
+               top: 80,
+               left: 20,
+               right: 20,
+               child: Material(
+                 color: Colors.red.withValues(alpha:0.9),
+                 borderRadius: BorderRadius.circular(8),
+                 child: Padding(
+                   padding: const EdgeInsets.all(12),
+                   child: Row(
+                     children: [
+                       const Icon(Icons.error_outline, color: Colors.white),
+                       const SizedBox(width: 12),
+                       Expanded(child: Text(state.error!, style: const TextStyle(color: Colors.white))),
+                       IconButton(
+                         icon: const Icon(Icons.close, color: Colors.white),
+                         onPressed: () => ref.read(graphProvider.notifier).connect(), // Retry
+                       )
+                     ],
+                   ),
+                 ),
+               ),
+             ),
         ],
       ),
     );
@@ -230,7 +123,7 @@ class _ForestViewState extends ConsumerState<ForestView>
             end: Alignment.bottomCenter,
             colors: [
               ArborTheme.background,
-              ArborTheme.background.withOpacity(0),
+              ArborTheme.background.withValues(alpha:0),
             ],
           ),
         ),
@@ -243,7 +136,7 @@ class _ForestViewState extends ConsumerState<ForestView>
                   width: 32,
                   height: 32,
                   decoration: BoxDecoration(
-                    color: ArborTheme.function.withOpacity(0.2),
+                    color: ArborTheme.function.withValues(alpha:0.2),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: const Icon(
@@ -295,8 +188,8 @@ class _ForestViewState extends ConsumerState<ForestView>
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
                 color: state.isConnected
-                    ? ArborTheme.method.withOpacity(0.2)
-                    : ArborTheme.importType.withOpacity(0.2),
+                    ? ArborTheme.method.withValues(alpha:0.2)
+                    : ArborTheme.importType.withValues(alpha:0.2),
                 borderRadius: BorderRadius.circular(16),
               ),
               child: Row(
@@ -332,10 +225,15 @@ class _ForestViewState extends ConsumerState<ForestView>
   }
 
   Widget _buildInspector(GraphState state) {
+    if (state.selectedNodeId == null) return const SizedBox.shrink();
+    
+    // Find node safely
     final node = state.nodes.firstWhere(
       (n) => n.id == state.selectedNodeId,
-      orElse: () => state.nodes.first,
+      orElse: () => state.nodes.isEmpty ? GraphNode(id: '', name: '', kind: '', file: '', lineStart: 0, lineEnd: 0) : state.nodes.first,
     );
+    
+    if (node.id.isEmpty) return const SizedBox.shrink();
 
     return Positioned(
       top: 80,
@@ -350,6 +248,7 @@ class _ForestViewState extends ConsumerState<ForestView>
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
           children: [
             // Header
             Row(
@@ -360,7 +259,7 @@ class _ForestViewState extends ConsumerState<ForestView>
                     vertical: 4,
                   ),
                   decoration: BoxDecoration(
-                    color: ArborTheme.colorForKind(node.kind).withOpacity(0.2),
+                    color: ArborTheme.colorForKind(node.kind).withValues(alpha:0.2),
                     borderRadius: BorderRadius.circular(4),
                   ),
                   child: Text(
@@ -389,9 +288,9 @@ class _ForestViewState extends ConsumerState<ForestView>
               node.name,
               style: Theme.of(context).textTheme.titleLarge,
             ),
-            if (node.qualifiedName.isNotEmpty && node.qualifiedName != node.name)
+            if (node.qualifiedName != null && node.qualifiedName != node.name)
               Text(
-                node.qualifiedName,
+                node.qualifiedName!,
                 style: Theme.of(context).textTheme.bodyMedium,
               ),
             const SizedBox(height: 16),
@@ -450,7 +349,7 @@ class _ForestViewState extends ConsumerState<ForestView>
             end: Alignment.topCenter,
             colors: [
               ArborTheme.background,
-              ArborTheme.background.withOpacity(0),
+              ArborTheme.background.withValues(alpha:0),
             ],
           ),
         ),
@@ -467,8 +366,14 @@ class _ForestViewState extends ConsumerState<ForestView>
             ),
             const Spacer(),
             Text(
-              'Zoom: ${(_scale * 100).round()}%',
-              style: Theme.of(context).textTheme.labelSmall,
+              // Scale is internal to GraphWidget, not easily accessible here unless raised state.
+              // For simplicity, just showing connection status or omitted.
+              state.isConnected ? 'SYNCED' : 'OFFLINE',
+               style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                 color: state.isConnected ? Colors.green : Colors.red,
+                 fontWeight: FontWeight.bold,
+                 letterSpacing: 2
+               ),
             ),
           ],
         ),

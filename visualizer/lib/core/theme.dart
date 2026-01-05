@@ -95,6 +95,7 @@ class ArborTheme {
           letterSpacing: 0.5,
         ),
       ),
+      /*
       cardTheme: CardTheme(
         color: surface,
         elevation: 0,
@@ -103,6 +104,7 @@ class ArborTheme {
           side: const BorderSide(color: border, width: 1),
         ),
       ),
+      */
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: surface,

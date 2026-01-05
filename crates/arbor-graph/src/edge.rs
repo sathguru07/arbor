@@ -79,3 +79,11 @@ impl Edge {
         }
     }
 }
+
+/// A simplified edge for graph export/visualization.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct GraphEdge {
+    pub source: String,
+    pub target: String,
+    pub kind: EdgeKind,
+}

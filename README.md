@@ -210,9 +210,56 @@ We love contributors. Whether you're fixing a typo, adding a language parser, or
 ## Roadmap
 
 - [x] **Phase 1**: Core indexer and CLI
-- [ ] **Phase 2**: Logic Forest visualizer (in progress)
-- [ ] **Phase 3**: VS Code extension
-- [ ] **Phase 4**: Language server protocol support
+- [x] **Phase 2**: Logic Forest visualizer ✅
+- [x] **Phase 3**: VS Code extension ✅
+- [x] **Phase 4**: Agentic Bridge (MCP) ✅
+- [ ] **Phase 5**: Language server protocol support
+
+## The Unified Nervous System
+
+Arbor v0.1.0 is **feature-complete**. The entire stack is now synchronized:
+
+```
+     Claude asks about AuthController
+           │
+           ▼
+    ┌─────────────────┐
+    │   Arbor Bridge  │  ← MCP Server (stdio)
+    │   (arbor-mcp)   │
+    └────────┬────────┘
+             │ trigger_spotlight()
+             ▼
+    ┌─────────────────┐
+    │   SyncServer    │  ← WebSocket broadcast
+    │   (port 8080)   │
+    └────────┬────────┘
+             │ FocusNode message
+     ┌───────┴───────┐
+     │               │
+     ▼               ▼
+┌─────────┐    ┌─────────┐
+│ VS Code │    │  Forest │
+│ Golden  │    │ Camera  │
+│Highlight│    │Animation│
+│ #FFD700 │    │ 600ms   │
+└─────────┘    └─────────┘
+```
+
+**Experience:** Ask Claude, "How does auth work?" → Watch your IDE highlight the file → Watch the Visualizer fly to the node.
+
+## CLI Commands
+
+| Command | Description |
+|---------|-------------|
+| `arbor init` | Creates `.arbor/` config directory |
+| `arbor index` | Full index of the codebase |
+| `arbor query <q>` | Search the graph |
+| `arbor serve` | Start the sidecar server |
+| `arbor export` | Export graph to JSON |
+| `arbor status` | Show index status |
+| `arbor viz` | Launch the Logic Forest visualizer |
+| `arbor bridge` | Start MCP server for AI integration |
+| `arbor bridge --viz` | MCP + Visualizer together |
 
 ## License
 
@@ -222,6 +269,10 @@ MIT — use it however you want. See [LICENSE](LICENSE) for details.
 
 <p align="center">
   <strong>Built for developers who think code is more than text.</strong>
+</p>
+
+<p align="center">
+  <em>"The forest is mapped. The AI is walking the path."</em>
 </p>
 
 <p align="center">

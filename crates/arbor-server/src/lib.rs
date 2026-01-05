@@ -34,5 +34,5 @@ pub use protocol::{Request, Response, RpcError};
 pub use server::{ArborServer, ServerConfig};
 pub use sync_server::{
     BroadcastMessage, FocusNodePayload, GraphUpdatePayload, IndexerStatusPayload, SyncServer,
-    SyncServerConfig,
+    SyncServerConfig, SyncServerHandle,
 };

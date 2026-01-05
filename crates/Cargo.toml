@@ -5,7 +5,7 @@ members = [
     "arbor-graph",
     "arbor-watcher",
     "arbor-server",
-    "arbor-cli",
+    "arbor-cli", "arbor-mcp",
 ]
 
 [workspace.package]

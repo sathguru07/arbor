@@ -3,9 +3,10 @@
 //! The ArborGraph wraps petgraph and adds indexes for fast lookups.
 //! It's the central data structure that everything else works with.
 
-use crate::edge::{Edge, EdgeKind};
+use crate::edge::{Edge, EdgeKind, GraphEdge};
 use arbor_core::CodeNode;
 use petgraph::graph::{DiGraph, NodeIndex};
+use petgraph::visit::EdgeRef; // For edge_references
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
@@ -224,6 +225,38 @@ impl ArborGraph {
     /// Iterates over all nodes.
     pub fn nodes(&self) -> impl Iterator<Item = &CodeNode> {
         self.graph.node_weights()
+    }
+
+    /// Iterates over all edges.
+    pub fn edges(&self) -> impl Iterator<Item = &Edge> {
+        self.graph.edge_weights()
+    }
+
+    /// Returns all edges with source and target IDs for export.
+    pub fn export_edges(&self) -> Vec<GraphEdge> {
+        self.graph
+            .edge_references()
+            .map(|edge_ref| {
+                let source = self
+                    .graph
+                    .node_weight(edge_ref.source())
+                    .unwrap()
+                    .id
+                    .clone();
+                let target = self
+                    .graph
+                    .node_weight(edge_ref.target())
+                    .unwrap()
+                    .id
+                    .clone();
+                let weight = edge_ref.weight(); // &Edge
+                GraphEdge {
+                    source,
+                    target,
+                    kind: weight.kind,
+                }
+            })
+            .collect()
     }
 
     /// Iterates over all node indexes.
