@@ -353,10 +353,23 @@ pub async fn bridge(path: &Path, launch_viz: bool) -> Result<()> {
     eprintln!("🔦 Spotlight mode active - Visualizer will track AI focus");
 
     // 3. Optionally launch the visualizer
+    // 3. Optionally launch the visualizer
     if launch_viz {
-        let viz_dir = path.join("visualizer");
-        if viz_dir.exists() {
-            eprintln!("{} Launching Flutter Visualizer...", "🚀".cyan());
+        // Try to find visualizer in target path or parent (workspace root)
+        let viz_dir = if path.join("visualizer").exists() {
+            Some(path.join("visualizer"))
+        } else if Path::new("../visualizer").exists() {
+            Some(Path::new("../visualizer").to_path_buf())
+        } else {
+            None
+        };
+
+        if let Some(dir) = viz_dir {
+            eprintln!(
+                "{} Launching Flutter Visualizer in {}...",
+                "🚀".cyan(),
+                dir.display()
+            );
 
             #[cfg(target_os = "windows")]
             let cmd = "flutter.bat";
@@ -368,7 +381,9 @@ pub async fn bridge(path: &Path, launch_viz: bool) -> Result<()> {
                 .arg("run")
                 .arg("-d")
                 .arg("windows")
-                .current_dir(&viz_dir)
+                .current_dir(&dir)
+                .stdout(std::process::Stdio::null()) // Silence flutter output to keep MCP clean
+                .stderr(std::process::Stdio::null())
                 .spawn()
                 .ok();
         } else {

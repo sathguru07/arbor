@@ -11,7 +11,7 @@ serde_json.workspace = true
 thiserror.workspace = true
 tracing.workspace = true
 
-arbor-core = { path = "../arbor-core" }
+arbor-core = { path = "../arbor-core", version = "0.1.0" }
 petgraph = "0.6"
 
 [dev-dependencies]

@@ -60,6 +60,10 @@ cargo test --all
 cd ../visualizer
 flutter pub get
 flutter build windows  # or macos/linux
+
+# Verify your environment
+cd ../crates
+cargo run -- check-health
 ```
 
 ### Running Locally
