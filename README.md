@@ -25,6 +25,7 @@
   <img src="https://img.shields.io/badge/rust-1.70+-orange?style=flat-square" alt="Rust" />
   <img src="https://img.shields.io/badge/flutter-3.0+-blue?style=flat-square" alt="Flutter" />
   <img src="https://img.shields.io/badge/parse-144ms-gold?style=flat-square" alt="144ms Parse" />
+  <a href="https://glama.ai/mcp/servers/Anandb71/arbor"><img src="https://glama.ai/mcp/servers/Anandb71/arbor/badge" alt="Glama MCP Server" /></a>
 </p>
 
 ---
@@ -231,7 +232,18 @@ We love contributors. Whether you're fixing a typo, adding a language parser, or
 - [x] **Phase 2**: Logic Forest visualizer ✅
 - [x] **Phase 3**: VS Code extension ✅
 - [x] **Phase 4**: Agentic Bridge (MCP) ✅
-- [ ] **Phase 5**: Language server protocol support
+- [x] **Phase 5**: Linux ARM64/AMD64 + macOS ARM64 CI/CD ✅
+- [ ] **Phase 6**: Language server protocol support
+- [ ] **Phase 7**: Go and Java parser support
+
+## Security
+
+Arbor is designed with security in mind:
+
+- **No data exfiltration**: All indexing happens locally; no code leaves your machine
+- **No API keys required**: Works entirely offline
+- **No telemetry**: Zero phone-home behavior
+- **Open source**: Full source code available for audit
 
 ## The Unified Nervous System
 
