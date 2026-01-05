@@ -5,29 +5,33 @@
 <h1 align="center">Arbor</h1>
 
 <p align="center">
-  <strong>The Graph-Native Intelligence Layer for Code</strong>
+  <strong>The Graph-Native Intelligence Layer for Code</strong><br>
+  <em>Stop RAG-ing. Start navigating.</em>
 </p>
 
 <p align="center">
   <a href="#quick-start">Quick Start</a> •
+  <a href="#why-arbor">Why Arbor?</a> •
   <a href="#features">Features</a> •
-  <a href="#architecture">Architecture</a> •
-  <a href="#the-protocol">Protocol</a> •
-  <a href="docs/CONTRIBUTING.md">Contributing</a>
+  <a href="#the-unified-nervous-system">Architecture</a> •
+  <a href="docs/PROTOCOL.md">Protocol</a> •
+  <a href="CONTRIBUTING.md">Contributing</a>
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-0.1.0-blue?style=flat-square" alt="Version" />
+  <a href="https://github.com/Anandb71/arbor/actions"><img src="https://img.shields.io/github/actions/workflow/status/Anandb71/arbor/rust.yml?style=flat-square&label=CI" alt="CI" /></a>
+  <img src="https://img.shields.io/badge/release-v0.1.0-blue?style=flat-square" alt="Release" />
   <img src="https://img.shields.io/badge/license-MIT-green?style=flat-square" alt="License" />
   <img src="https://img.shields.io/badge/rust-1.70+-orange?style=flat-square" alt="Rust" />
   <img src="https://img.shields.io/badge/flutter-3.0+-blue?style=flat-square" alt="Flutter" />
+  <img src="https://img.shields.io/badge/parse-144ms-gold?style=flat-square" alt="144ms Parse" />
 </p>
 
 ---
 
-## What is Arbor?
+## Why Arbor?
 
-Most AI coding assistants treat your codebase like a bag of text. They search for keywords, embed chunks into vectors, and hope for the best. The result? Hallucinated connections, missing context, and refactors that break everything downstream.
+> **The Vector RAG Problem:** Most AI coding assistants treat your codebase like a bag of text. They embed chunks into vectors and hope similarity search finds the right context. The result? Hallucinated connections, missing dependencies, and refactors that break everything downstream.
 
 **Arbor thinks differently.**
 
