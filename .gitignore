@@ -31,3 +31,17 @@ arbor-graph.json
 *.dll
 *.so
 *.dylib
+
+# Debug Artifacts
+log_dump.txt
+debug_wrapper.bat
+err_check.txt
+out_check.txt
+crates/err.txt
+crates/input.json
+crates/log.txt
+crates/out.txt
+crates/output.log
+crates/response.json
+crates/stderr.txt
+crates/stdout.txt
