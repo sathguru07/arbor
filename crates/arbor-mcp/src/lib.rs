@@ -16,7 +16,9 @@ struct JsonRpcRequest {
 #[derive(Serialize, Deserialize, Debug)]
 struct JsonRpcResponse {
     jsonrpc: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
     result: Option<Value>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     error: Option<JsonRpcError>,
     id: Option<Value>,
 }
@@ -93,21 +95,23 @@ impl McpServer {
             };
 
             // Handle method
-            let response = self.handle_request(req).await;
-
-            // Serialize and write
-            let json = serde_json::to_string(&response)?;
-            writeln!(stdout, "{}", json)?;
-            stdout.flush()?;
+            if let Some(response) = self.handle_request(req).await {
+                // Serialize and write
+                let json = serde_json::to_string(&response)?;
+                writeln!(stdout, "{}", json)?;
+                stdout.flush()?;
+            }
         }
         Ok(())
     }
 
-    async fn handle_request(&self, req: JsonRpcRequest) -> JsonRpcResponse {
+    async fn handle_request(&self, req: JsonRpcRequest) -> Option<JsonRpcResponse> {
+        let id = req.id.clone();
+
         // Basic list_tools and call_tool implementation
         let result = match req.method.as_str() {
             "initialize" => Ok(json!({
-                "protocolVersion": "0.1.0",
+                "protocolVersion": "2024-11-05",
                 "capabilities": {
                     "tools": {},
                     "resources": {}
@@ -120,6 +124,7 @@ impl McpServer {
             "notifications/initialized" => Ok(json!({})),
             "tools/list" => self.list_tools(),
             "tools/call" => self.call_tool(req.params.unwrap_or(Value::Null)).await,
+            "resources/list" => Ok(json!({ "resources": [] })),
             method => Err(JsonRpcError {
                 code: -32601,
                 message: format!("Method not found: {}", method),
@@ -127,20 +132,24 @@ impl McpServer {
             }),
         };
 
-        match result {
+        if id.is_none() {
+            return None;
+        }
+
+        Some(match result {
             Ok(val) => JsonRpcResponse {
                 jsonrpc: "2.0".to_string(),
                 result: Some(val),
                 error: None,
-                id: req.id,
+                id,
             },
             Err(err) => JsonRpcResponse {
                 jsonrpc: "2.0".to_string(),
                 result: None,
                 error: Some(err),
-                id: req.id,
+                id,
             },
-        }
+        })
     }
 
     fn list_tools(&self) -> Result<Value, JsonRpcError> {

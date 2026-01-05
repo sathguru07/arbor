@@ -63,7 +63,7 @@ arbor index
 arbor serve
 ```
 
-That's it. Your IDE or AI agent can now connect to `ws://localhost:7432` and query the graph.
+That's it. Your IDE or AI agent can now connect to `ws://localhost:7433` and query the graph.
 
 ## Features
 

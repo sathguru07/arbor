@@ -287,33 +287,49 @@ pub async fn bridge(path: &Path, launch_viz: bool) -> Result<()> {
 
     eprintln!("{} Arbor Bridge (MCP Mode)", "🔗".bold().cyan());
 
-    // 1. Index Codebase
-    eprintln!("{} Indexing codebase...", "⏳".yellow());
-    let result = index_directory(path)?;
-    let mut graph = result.graph;
+    // 1. Create Shared Graph (Empty initially)
+    let graph = arbor_graph::ArborGraph::new();
+    let shared_graph = std::sync::Arc::new(tokio::sync::RwLock::new(graph));
 
-    // Compute centrality
-    eprintln!("{} Computing centrality...", "🧠".yellow());
-    let scores = compute_centrality(&graph, 20, 0.85);
-    graph.set_centrality(scores.into_map());
+    // 2. Spawn Background Indexer
+    let index_path = path.to_path_buf();
+    let index_graph = shared_graph.clone();
 
-    eprintln!(
-        "{} Indexed {} files ({} nodes)",
-        "✓".green(),
-        result.files_indexed,
-        result.nodes_extracted
-    );
+    eprintln!("{} Starting background indexer...", "⏳".yellow());
+    tokio::spawn(async move {
+        // Run blocking indexer in spawn_blocking
+        let result = tokio::task::spawn_blocking(move || index_directory(&index_path)).await;
 
-    // 2. Start Servers (Background)
-    let rpc_port = 7432;
-    let sync_port = 8080;
+        match result {
+            Ok(Ok(index_result)) => {
+                let mut guard = index_graph.write().await;
+                *guard = index_result.graph;
+
+                // Compute centrality
+                let scores = compute_centrality(&guard, 20, 0.85);
+                guard.set_centrality(scores.into_map());
+
+                eprintln!(
+                    "{} Index Ready: {} files, {} nodes",
+                    "✓".green(),
+                    index_result.files_indexed,
+                    index_result.nodes_extracted
+                );
+            }
+            Ok(Err(e)) => eprintln!("{} Indexing failed: {}", "⚠".red(), e),
+            Err(e) => eprintln!("{} Indexer panicked: {}", "⚠".red(), e),
+        }
+    });
+
+    // 3. Start Servers (Background)
+    let rpc_port = 7433;
+    let sync_port = 8081;
 
     let rpc_config = ServerConfig {
         addr: format!("127.0.0.1:{}", rpc_port).parse()?,
     };
 
-    let arbor_server = ArborServer::new(graph, rpc_config);
-    let shared_graph = arbor_server.graph();
+    let arbor_server = ArborServer::new_with_shared(shared_graph.clone(), rpc_config);
 
     let sync_config = arbor_server::SyncServerConfig {
         addr: format!("127.0.0.1:{}", sync_port).parse()?,
@@ -328,8 +344,6 @@ pub async fn bridge(path: &Path, launch_viz: bool) -> Result<()> {
     };
 
     let sync_server = arbor_server::SyncServer::new_with_shared(sync_config, shared_graph.clone());
-
-    // Get the spotlight handle BEFORE moving sync_server into the spawned task
     let spotlight_handle = sync_server.handle();
 
     tokio::spawn(async move {

@@ -77,7 +77,7 @@ class GraphNotifier extends StateNotifier<GraphState> {
   /// Connects to the Arbor server.
   Future<void> connect() async {
     state = state.copyWith(isLoading: true, error: null);
-    await _wsService.connect('ws://127.0.0.1:8080'); // Use SyncServer port
+    await _wsService.connect('ws://127.0.0.1:8081'); // Use SyncServer port
     state = state.copyWith(isConnected: _wsService.isConnected, isLoading: false);
   }
 

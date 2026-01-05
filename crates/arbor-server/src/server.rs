@@ -47,6 +47,11 @@ impl ArborServer {
         }
     }
 
+    /// Creates a new server with an existing shared graph handle.
+    pub fn new_with_shared(graph: SharedGraph, config: ServerConfig) -> Self {
+        Self { config, graph }
+    }
+
     /// Returns a handle to the shared graph for updates.
     pub fn graph(&self) -> SharedGraph {
         self.graph.clone()

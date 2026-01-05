@@ -8,7 +8,7 @@ The Arbor Protocol is a JSON-RPC 2.0 interface over WebSocket that allows AI age
 
 ## Connection
 
-Default endpoint: `ws://localhost:7432`
+Default endpoint: `ws://localhost:7433`
 
 The server supports multiple concurrent connections. Each connection maintains its own query state but shares the underlying graph.
 
@@ -333,7 +333,7 @@ The Spotlight Protocol enables real-time synchronization between AI agents, the 
 
 | Property | Value |
 |----------|-------|
-| **Endpoint** | `ws://127.0.0.1:8080` (SyncServer) |
+| **Endpoint** | `ws://127.0.0.1:8081` (SyncServer) |
 | **Latency Target** | <50ms for UI triggers |
 | **Highlight System** | Golden Highlight (`#FFD700`) |
 
