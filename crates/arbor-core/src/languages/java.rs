@@ -277,7 +277,7 @@ fn extract_fields(
                             )
                             .with_bytes(child.start_byte() as u32, child.end_byte() as u32)
                             .with_column(name_node.start_position().column as u32)
-                            .with_visibility(visibility.clone()),
+                            .with_visibility(visibility),
                     );
                 }
             }

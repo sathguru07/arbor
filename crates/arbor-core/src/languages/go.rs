@@ -177,13 +177,10 @@ fn extract_method(node: &Node, source: &str, file_path: &str) -> Option<CodeNode
 fn extract_type_declaration(node: &Node, source: &str, file_path: &str, nodes: &mut Vec<CodeNode>) {
     for i in 0..node.child_count() {
         if let Some(child) = node.child(i) {
-            match child.kind() {
-                "type_spec" => {
-                    if let Some(code_node) = extract_type_spec(&child, source, file_path) {
-                        nodes.push(code_node);
-                    }
+            if child.kind() == "type_spec" {
+                if let Some(code_node) = extract_type_spec(&child, source, file_path) {
+                    nodes.push(code_node);
                 }
-                _ => {}
             }
         }
     }
