@@ -96,7 +96,12 @@ fn extract_function(node: &Node, source: &str, file_path: &str) -> Option<CodeNo
     let name_node = node.child_by_field_name("name")?;
     let name = get_text(&name_node, source);
 
-    let visibility = if name.chars().next().map(|c| c.is_uppercase()).unwrap_or(false) {
+    let visibility = if name
+        .chars()
+        .next()
+        .map(|c| c.is_uppercase())
+        .unwrap_or(false)
+    {
         Visibility::Public
     } else {
         Visibility::Private
@@ -150,7 +155,12 @@ fn extract_method(node: &Node, source: &str, file_path: &str) -> Option<CodeNode
         format!("{}.{}", receiver_type, name)
     };
 
-    let visibility = if name.chars().next().map(|c| c.is_uppercase()).unwrap_or(false) {
+    let visibility = if name
+        .chars()
+        .next()
+        .map(|c| c.is_uppercase())
+        .unwrap_or(false)
+    {
         Visibility::Public
     } else {
         Visibility::Private
@@ -191,7 +201,12 @@ fn extract_type_spec(node: &Node, source: &str, file_path: &str) -> Option<CodeN
     let name_node = node.child_by_field_name("name")?;
     let name = get_text(&name_node, source);
 
-    let visibility = if name.chars().next().map(|c| c.is_uppercase()).unwrap_or(false) {
+    let visibility = if name
+        .chars()
+        .next()
+        .map(|c| c.is_uppercase())
+        .unwrap_or(false)
+    {
         Visibility::Public
     } else {
         Visibility::Private
@@ -282,12 +297,16 @@ fn extract_constants(node: &Node, source: &str, file_path: &str, nodes: &mut Vec
             if child.kind() == "const_spec" {
                 if let Some(name_node) = child.child_by_field_name("name") {
                     let name = get_text(&name_node, source);
-                    let visibility =
-                        if name.chars().next().map(|c| c.is_uppercase()).unwrap_or(false) {
-                            Visibility::Public
-                        } else {
-                            Visibility::Private
-                        };
+                    let visibility = if name
+                        .chars()
+                        .next()
+                        .map(|c| c.is_uppercase())
+                        .unwrap_or(false)
+                    {
+                        Visibility::Public
+                    } else {
+                        Visibility::Private
+                    };
 
                     nodes.push(
                         CodeNode::new(&name, &name, NodeKind::Constant, file_path)
@@ -312,12 +331,16 @@ fn extract_variables(node: &Node, source: &str, file_path: &str, nodes: &mut Vec
             if child.kind() == "var_spec" {
                 if let Some(name_node) = child.child_by_field_name("name") {
                     let name = get_text(&name_node, source);
-                    let visibility =
-                        if name.chars().next().map(|c| c.is_uppercase()).unwrap_or(false) {
-                            Visibility::Public
-                        } else {
-                            Visibility::Private
-                        };
+                    let visibility = if name
+                        .chars()
+                        .next()
+                        .map(|c| c.is_uppercase())
+                        .unwrap_or(false)
+                    {
+                        Visibility::Public
+                    } else {
+                        Visibility::Private
+                    };
 
                     nodes.push(
                         CodeNode::new(&name, &name, NodeKind::Variable, file_path)
@@ -406,11 +429,15 @@ func Hello(name string) string {
         let mut ts_parser = tree_sitter::Parser::new();
         ts_parser.set_language(parser.language()).unwrap();
         let tree = ts_parser.parse(source, None).unwrap();
-        
+
         let nodes = parser.extract_nodes(&tree, source, "test.go");
-        
-        assert!(nodes.iter().any(|n| n.name == "main" && matches!(n.kind, NodeKind::Module)));
-        assert!(nodes.iter().any(|n| n.name == "Hello" && matches!(n.kind, NodeKind::Function)));
+
+        assert!(nodes
+            .iter()
+            .any(|n| n.name == "main" && matches!(n.kind, NodeKind::Module)));
+        assert!(nodes
+            .iter()
+            .any(|n| n.name == "Hello" && matches!(n.kind, NodeKind::Function)));
     }
 
     #[test]
@@ -432,11 +459,15 @@ func (u *User) Greet() string {
         let mut ts_parser = tree_sitter::Parser::new();
         ts_parser.set_language(parser.language()).unwrap();
         let tree = ts_parser.parse(source, None).unwrap();
-        
+
         let nodes = parser.extract_nodes(&tree, source, "test.go");
-        
-        assert!(nodes.iter().any(|n| n.name == "User" && matches!(n.kind, NodeKind::Struct)));
-        assert!(nodes.iter().any(|n| n.name == "Greet" && matches!(n.kind, NodeKind::Method)));
+
+        assert!(nodes
+            .iter()
+            .any(|n| n.name == "User" && matches!(n.kind, NodeKind::Struct)));
+        assert!(nodes
+            .iter()
+            .any(|n| n.name == "Greet" && matches!(n.kind, NodeKind::Method)));
     }
 
     #[test]
@@ -455,12 +486,12 @@ type privateStruct struct {}
         let mut ts_parser = tree_sitter::Parser::new();
         ts_parser.set_language(parser.language()).unwrap();
         let tree = ts_parser.parse(source, None).unwrap();
-        
+
         let nodes = parser.extract_nodes(&tree, source, "test.go");
-        
+
         let public_func = nodes.iter().find(|n| n.name == "PublicFunc").unwrap();
         let private_func = nodes.iter().find(|n| n.name == "privateFunc").unwrap();
-        
+
         assert!(matches!(public_func.visibility, Visibility::Public));
         assert!(matches!(private_func.visibility, Visibility::Private));
     }
