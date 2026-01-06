@@ -63,8 +63,8 @@ class GraphPainter extends CustomPainter {
 
       final paint = Paint()
         ..color = isHighlighted 
-            ? ArborTheme.function.withValues(alpha:0.8 * depthOpacity)
-            : ArborTheme.border.withValues(alpha:0.4 * depthOpacity)
+            ? ArborTheme.function.withOpacity(0.8 * depthOpacity)
+            : ArborTheme.border.withOpacity(0.4 * depthOpacity)
         ..strokeWidth = isHighlighted ? 2.0 : 1.0
         ..style = PaintingStyle.stroke;
 
@@ -118,7 +118,7 @@ class GraphPainter extends CustomPainter {
     // Cinematic Bloom (Persistent for important nodes) - Disable in Low GPU Mode
     if (!isLowGpuMode && node.centrality > 0.3) {
        final bloomPaint = Paint()
-        ..color = color.withValues(alpha:0.4)
+        ..color = color.withOpacity(0.4)
         ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 15);
        canvas.drawCircle(center, radius * 1.5, bloomPaint);
     }
@@ -128,13 +128,13 @@ class GraphPainter extends CustomPainter {
       // Simple ring in Low GPU mode, Blur in High GPU
       if (isLowGpuMode) {
          final simpleGlowPaint = Paint()
-          ..color = color.withValues(alpha:0.3)
+          ..color = color.withOpacity(0.3)
           ..style = PaintingStyle.stroke
           ..strokeWidth = 4;
          canvas.drawCircle(center, radius * 1.5, simpleGlowPaint);
       } else {
          final glowPaint = Paint()
-          ..color = color.withValues(alpha:0.3)
+          ..color = color.withOpacity(0.3)
           ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 20);
          canvas.drawCircle(center, radius * 2, glowPaint);
       }
@@ -142,7 +142,7 @@ class GraphPainter extends CustomPainter {
 
     // Draw outer ring
     final ringPaint = Paint()
-      ..color = color.withValues(alpha:0.5)
+      ..color = color.withOpacity(0.5)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 2;
     canvas.drawCircle(center, radius, ringPaint);

@@ -60,7 +60,7 @@ class _ForestViewState extends ConsumerState<ForestView> {
           // Loading overlay
           if (state.isLoading)
             Container(
-              color: ArborTheme.background.withValues(alpha:0.7),
+              color: ArborTheme.background.withOpacity(0.7),
               child: const Center(
                 child: CircularProgressIndicator(
                   color: ArborTheme.function,
@@ -75,7 +75,7 @@ class _ForestViewState extends ConsumerState<ForestView> {
                left: 20,
                right: 20,
                child: Material(
-                 color: Colors.red.withValues(alpha:0.9),
+                 color: Colors.red.withOpacity(0.9),
                  borderRadius: BorderRadius.circular(8),
                  child: Padding(
                    padding: const EdgeInsets.all(12),
@@ -126,7 +126,7 @@ class _ForestViewState extends ConsumerState<ForestView> {
             end: Alignment.bottomCenter,
             colors: [
               ArborTheme.background,
-              ArborTheme.background.withValues(alpha:0),
+              ArborTheme.background.withOpacity(0),
             ],
           ),
         ),
@@ -139,7 +139,7 @@ class _ForestViewState extends ConsumerState<ForestView> {
                   width: 32,
                   height: 32,
                   decoration: BoxDecoration(
-                    color: ArborTheme.function.withValues(alpha:0.2),
+                    color: ArborTheme.function.withOpacity(0.2),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: const Icon(
@@ -191,8 +191,8 @@ class _ForestViewState extends ConsumerState<ForestView> {
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
                 color: state.isConnected
-                    ? ArborTheme.method.withValues(alpha:0.2)
-                    : ArborTheme.importType.withValues(alpha:0.2),
+                    ? ArborTheme.method.withOpacity(0.2)
+                    : ArborTheme.importType.withOpacity(0.2),
                 borderRadius: BorderRadius.circular(16),
               ),
               child: Row(
@@ -262,7 +262,7 @@ class _ForestViewState extends ConsumerState<ForestView> {
                     vertical: 4,
                   ),
                   decoration: BoxDecoration(
-                    color: ArborTheme.colorForKind(node.kind).withValues(alpha:0.2),
+                    color: ArborTheme.colorForKind(node.kind).withOpacity(0.2),
                     borderRadius: BorderRadius.circular(4),
                   ),
                   child: Text(
@@ -348,12 +348,12 @@ class _ForestViewState extends ConsumerState<ForestView> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
-          color: ArborTheme.surface.withValues(alpha:0.9),
+          color: ArborTheme.surface.withOpacity(0.9),
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: ArborTheme.border.withValues(alpha:0.5)),
+          border: Border.all(color: ArborTheme.border.withOpacity(0.5)),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha:0.2),
+              color: Colors.black.withOpacity(0.2),
               blurRadius: 8,
               offset: const Offset(0, 4),
             ),
@@ -421,7 +421,7 @@ class _ForestViewState extends ConsumerState<ForestView> {
             end: Alignment.topCenter,
             colors: [
               ArborTheme.background,
-              ArborTheme.background.withValues(alpha:0),
+              ArborTheme.background.withOpacity(0),
             ],
           ),
         ),
