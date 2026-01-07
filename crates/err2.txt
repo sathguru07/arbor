@@ -1,0 +1,21 @@
+    Checking arbor-graph v0.1.1 (C:\Users\Asus-2023\arbor\crates\arbor-graph)
+error[E0432]: unresolved imports `graph::GraphNode`, `graph::NodeInfo`
+  --> arbor-graph\src\lib.rs:40:29
+   |
+40 | pub use graph::{ArborGraph, GraphNode, NodeId, NodeInfo};
+   |                             ^^^^^^^^^          ^^^^^^^^ no `NodeInfo` in `graph`
+   |                             |
+   |                             no `GraphNode` in `graph`
+   |                             help: a similar name exists in the module: `GraphEdge`
+   |
+   = help: consider importing this struct instead:
+           crate::query::NodeInfo
+
+error[E0432]: unresolved import `query::GraphQuery`
+  --> arbor-graph\src\lib.rs:41:32
+   |
+41 | pub use query::{DependentInfo, GraphQuery, ImpactResult, QueryResult};
+   |                                ^^^^^^^^^^ no `GraphQuery` in `query`
+
+For more information about this error, try `rustc --explain E0432`.
+error: could not compile `arbor-graph` (lib) due to 2 previous errors
