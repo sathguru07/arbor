@@ -134,6 +134,10 @@ impl ArborParser {
         // query syntax in tree-sitter 0.22. Dart is still supported via legacy parser.rs path.
         // TODO: Upgrade when tree-sitter-dart releases 0.22 compatible version.
 
+        // Compile C# queries
+        let csharp_queries = Self::compile_csharp_queries()?;
+        queries.insert("cs".to_string(), csharp_queries);
+
         Ok(Self { parser, queries })
     }
 
@@ -695,6 +699,43 @@ impl ArborParser {
         let calls_query = r#"
             (call_expression function: (identifier) @callee)
             (call_expression function: (field_expression field: (field_identifier) @callee))
+        "#;
+
+        let symbols = Query::new(&language, symbols_query)
+            .map_err(|e| ParseError::QueryError(e.to_string()))?;
+        let imports = Query::new(&language, imports_query)
+            .map_err(|e| ParseError::QueryError(e.to_string()))?;
+        let calls = Query::new(&language, calls_query)
+            .map_err(|e| ParseError::QueryError(e.to_string()))?;
+
+        Ok(CompiledQueries {
+            symbols,
+            imports,
+            calls,
+            language,
+        })
+    }
+
+    fn compile_csharp_queries() -> Result<CompiledQueries> {
+        let language = tree_sitter_c_sharp::language();
+
+        let symbols_query = r#"
+            (method_declaration name: (identifier) @name) @method_def
+            (class_declaration name: (identifier) @name) @class_def
+            (interface_declaration name: (identifier) @name) @interface_def
+            (struct_declaration name: (identifier) @name) @struct_def
+            (constructor_declaration name: (identifier) @name) @function_def
+            (property_declaration name: (identifier) @name) @method_def
+        "#;
+
+        let imports_query = r#"
+            (using_directive (identifier) @source)
+            (using_directive (qualified_name) @source)
+        "#;
+
+        let calls_query = r#"
+            (invocation_expression function: (identifier) @callee)
+            (invocation_expression function: (member_access_expression name: (identifier) @callee))
         "#;
 
         let symbols = Query::new(&language, symbols_query)
