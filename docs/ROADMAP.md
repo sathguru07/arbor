@@ -194,14 +194,106 @@ Hide low-connectivity nodes to reveal architecture:
 
 ---
 
+## Adoption & UX (Critical for Growth)
+
+### 12. 🚀 Opinionated Workflows
+
+**Problem**: Arbor can do many things, but nothing screams "I need this now."
+
+**Solution**: Two killer default workflows as first-class CLI commands:
+
+#### Safe Refactor Mode
+
+```bash
+arbor refactor auth.rs::validate_token
+# Output:
+# ⚠️  Blast Radius: 12 nodes affected
+# ├── Direct: TokenMiddleware, AuthController
+# ├── Transitive: UserService, SessionManager, ...
+# └── Public API impact: 2 endpoints
+# 
+# Proceed with refactor? [y/N]
+```
+
+#### Explain Codebase Mode
+
+```bash
+arbor explain "Where does authentication start?"
+# Output:
+# Path traced: AuthController → TokenMiddleware → UserRepository → DB
+# Context: 2,400 tokens (within limit)
+# Confidence: Graph-backed (not RAG)
+```
+
+---
+
+### 13. 🎯 Flagship Language Depth (TypeScript)
+
+**Problem**: Language breadth > depth. Shallow semantics everywhere.
+
+**Solution**: Pick ONE language and make it **scary-good**.
+
+| Target | TypeScript |
+|--------|------------|
+| Async/await edges | Trace Promise chains |
+| Type inference | Resolve generics properly |
+| Module resolution | Handle barrel exports, path aliases |
+| React component tree | Parent → Child props flow |
+
+**Why TypeScript?** Largest user base, most AI coding assistants target JS/TS.
+
+---
+
+### 14. 📹 AI Transcript Demos
+
+**Problem**: AI value is implicit, not obvious.
+
+**Solution**: Add before/after transcripts showing how LLMs behave differently with Arbor.
+
+**Location**: `docs/demos/` directory with:
+
+- `WITHOUT_ARBOR.md` — LLM hallucinates, misses dependencies
+- `WITH_ARBOR.md` — LLM walks graph, correct answer
+
+**README Section**: Link to these prominently under "Why Arbor?"
+
+---
+
+### 15. 📖 ArborQL Documentation
+
+**Problem**: ArborQL is undersold. Appears late and briefly.
+
+**Solution**: Dedicated `docs/ARBORQL.md` with:
+
+- Full query syntax reference
+- Pathfinding examples (not just search)
+- Traversal vs Search explanation
+- Integration with MCP tools
+
+---
+
+### 16. 👋 Contributor Onboarding
+
+**Problem**: High friction for new contributors (Rust + Tree-sitter + graph theory).
+
+**Solution**:
+
+1. **Good First Issues template** in `docs/GOOD_FIRST_ISSUES.md`
+2. **"Add a language edge"** tutorial
+3. **"Add a query"** tutorial  
+4. **Architecture decision records** (ADRs) in `docs/adr/`
+
+---
+
 ## Implementation Order
 
 | Phase | Features | Est. Effort |
 |-------|----------|-------------|
 | **Phase 1** | Impact Radius, Context Slicing | 2 weeks |
 | **Phase 2** | Shadow Indexing, Heatmaps | 2 weeks |
-| **Phase 3** | Docker, Relay | 1 week |
+| **Phase 3** | Docker, Cross-Platform CI | 1 week |
 | **Phase 4** | Creative (Sandbox, Reports, LSP) | 3 weeks |
+| **Phase 5** | Adoption (Workflows, TS Depth, Demos) | 2 weeks |
 
 ---
 
@@ -211,3 +303,6 @@ Hide low-connectivity nodes to reveal architecture:
 - [ ] Implement `impact.rs` reachability
 - [ ] Update CHANGELOG with v1.1.0 section
 - [ ] Design Docker CI/CD pipeline
+- [ ] Write ArborQL documentation
+- [ ] Create AI transcript demos
+- [ ] Improve GOOD_FIRST_ISSUES.md

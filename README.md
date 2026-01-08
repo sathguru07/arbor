@@ -169,9 +169,9 @@ arbor/
 - [ ] **Dynamic Context Slicing**: Token-optimized LLM context with node pinning
 - [ ] **Shadow Indexing**: Structural git diffs (`--structural-only` flag)
 - [ ] **Technical Debt Heatmaps**: Cyclomatic complexity, coupling, cohesion overlays
-- [ ] **Arbor Relay**: Real-time collaborative graph sessions
-- [ ] **Docker Distribution**: `docker pull ghcr.io/anandb71/arbor`
-- [ ] **Cross-Platform Binaries**: macOS, Linux, Windows via GitHub Actions
+- [ ] **Opinionated Workflows**: `arbor refactor` and `arbor explain` commands
+- [ ] **TypeScript Depth**: Flagship language with async/await edges, React component trees
+- [ ] **Docker + Cross-Platform**: `docker pull ghcr.io/anandb71/arbor`, macOS/Linux binaries
 
 📖 **Full roadmap**: [docs/ROADMAP.md](docs/ROADMAP.md)
 
