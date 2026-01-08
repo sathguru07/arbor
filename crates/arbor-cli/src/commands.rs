@@ -229,32 +229,50 @@ pub async fn viz(path: &Path) -> Result<()> {
     });
 
     // 4. Launch Visualizer
-    let viz_dir = path.join("visualizer");
-    if viz_dir.exists() {
-        println!("{}", "Launching Flutter Visualizer...".cyan());
+    // Priority 1: Standalone bundled executable (relative to arbor.exe)
+    let current_exe = std::env::current_exe()?;
+    let exe_dir = current_exe.parent().unwrap_or(path);
+    let bundled_viz = exe_dir.join("arbor_visualizer").join("visualizer.exe");
 
-        #[cfg(target_os = "windows")]
-        let cmd = "flutter.bat";
-        #[cfg(not(target_os = "windows"))]
-        let cmd = "flutter";
-
-        let status = std::process::Command::new(cmd)
-            .arg("run")
-            .arg("-d")
-            .arg("windows")
-            .current_dir(&viz_dir)
+    if bundled_viz.exists() {
+        println!("{} Launching bundled visualizer...", "🚀".cyan());
+        let status = std::process::Command::new(&bundled_viz)
+            .current_dir(bundled_viz.parent().unwrap())
             .status();
 
         match status {
             Ok(_) => println!("Visualizer closed."),
-            Err(e) => println!("Failed to launch visualizer: {}", e),
+            Err(e) => println!("Failed to launch bundled visualizer: {}", e),
         }
     } else {
-        println!(
-            "{}",
-            "Visualizer source not found in target directory.".yellow()
-        );
-        println!("Please run 'arbor viz' from the root of the arbor repo, or start the visualizer manually.");
+        // Priority 2: Source code (Flutter dev mode)
+        let viz_dir = path.join("visualizer");
+        if viz_dir.exists() {
+            println!("{}", "Launching Flutter Visualizer (Dev Mode)...".cyan());
+
+            #[cfg(target_os = "windows")]
+            let cmd = "flutter.bat";
+            #[cfg(not(target_os = "windows"))]
+            let cmd = "flutter";
+
+            let status = std::process::Command::new(cmd)
+                .arg("run")
+                .arg("-d")
+                .arg("windows")
+                .current_dir(&viz_dir)
+                .status();
+
+            match status {
+                Ok(_) => println!("Visualizer closed."),
+                Err(e) => println!("Failed to launch visualizer: {}", e),
+            }
+        } else {
+            println!(
+                "{}",
+                "Visualizer not found (neither bundled 'arbor_visualizer' nor source 'visualizer' detected).".yellow()
+            );
+            println!("Please download the full Arbor release or run from source.");
+        }
     }
 
     Ok(())
