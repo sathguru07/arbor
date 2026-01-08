@@ -163,6 +163,18 @@ arbor/
 - [x] **Phase 10**: The Brain Upgrade (Control Flow & Data Flow)
 - [x] **Phase 11**: Expanded Support (C# Parser, Graph Persistence)
 
+### Coming in v1.1.0 "The Sentinel Update"
+
+- [ ] **Impact Radius Simulator**: Predict breakage before changes (heat gradient visualization)
+- [ ] **Dynamic Context Slicing**: Token-optimized LLM context with node pinning
+- [ ] **Shadow Indexing**: Structural git diffs (`--structural-only` flag)
+- [ ] **Technical Debt Heatmaps**: Cyclomatic complexity, coupling, cohesion overlays
+- [ ] **Arbor Relay**: Real-time collaborative graph sessions
+- [ ] **Docker Distribution**: `docker pull ghcr.io/anandb71/arbor`
+- [ ] **Cross-Platform Binaries**: macOS, Linux, Windows via GitHub Actions
+
+📖 **Full roadmap**: [docs/ROADMAP.md](docs/ROADMAP.md)
+
 ## Security
 
 Arbor is designed with a **Local-First** security model:
