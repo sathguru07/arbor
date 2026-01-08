@@ -34,11 +34,13 @@
 
 ## Why Arbor?
 
-**The Vector RAG Problem:** Most AI coding assistants treat your codebase like a bag of text. They embed chunks into vectors and hope similarity search finds the right context. The result? Hallucinated connections, missing dependencies, and refactors that break everything downstream.
+**Arbor is designed to replace embedding-based RAG for code.**
+
+Most AI coding assistants treat your codebase like a bag of text. They embed chunks into vectors and hope similarity search finds the right context. The result? Hallucinated connections, missing dependencies, and refactors that break everything downstream.
 
 **Arbor is the ground truth layer between code and AI.**
 
-We parse your code into an Abstract Syntax Tree using [Tree-sitter](https://tree-sitter.github.io/), then build a living graph where every function, class, and variable is a **node**, and every import, call, and implementation is an **edge**. When an AI asks "where is authentication handled?", Arbor doesn't grep for "auth" — it traces the call graph to find the actual service that initiates the flow.
+We parse your code into an AST using [Tree-sitter](https://tree-sitter.github.io/), then build a living graph where every function, class, and variable is a **node**, and every import, call, and implementation is an **edge**. When an AI asks "where is authentication handled?", Arbor traces the call graph to find the actual service — not 47 keyword matches.
 
 ```text
 Traditional RAG:         Arbor:
@@ -169,13 +171,12 @@ arbor/
 
 ### Coming in v1.1.0 "The Sentinel Update"
 
-- [ ] **Impact Radius Simulator**: Predict breakage before changes (heat gradient visualization)
-- [ ] **Dynamic Context Slicing**: Token-optimized LLM context with node pinning
-- [ ] **Shadow Indexing**: Structural git diffs (`--structural-only` flag)
-- [ ] **Technical Debt Heatmaps**: Cyclomatic complexity, coupling, cohesion overlays
+*Theme: "Predict breakage + give AI only the logic it needs"*
+
+- [ ] **Impact Radius Simulator**: `arbor refactor` with blast radius preview + `--why` flag
+- [ ] **Dynamic Context Slicing**: Token-bounded LLM context with node pinning
 - [ ] **Opinionated Workflows**: `arbor refactor` and `arbor explain` commands
-- [ ] **TypeScript Depth**: Flagship language with async/await edges, React component trees
-- [ ] **Docker + Cross-Platform**: `docker pull ghcr.io/anandb71/arbor`, macOS/Linux binaries
+- [ ] **Docker + Cross-Platform**: One-command install on any platform
 
 📖 **Full roadmap**: [docs/ROADMAP.md](docs/ROADMAP.md)
 
