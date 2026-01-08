@@ -4,6 +4,7 @@
 //! It's the central data structure that everything else works with.
 
 use crate::edge::{Edge, EdgeKind, GraphEdge};
+use crate::search_index::SearchIndex;
 use arbor_core::CodeNode;
 use petgraph::graph::{DiGraph, NodeIndex};
 use petgraph::visit::EdgeRef; // For edge_references
@@ -33,6 +34,10 @@ pub struct ArborGraph {
 
     /// Centrality scores for ranking.
     centrality: HashMap<NodeId, f64>,
+
+    /// Search index for fast substring queries.
+    #[serde(skip)]
+    search_index: SearchIndex,
 }
 
 impl Default for ArborGraph {
@@ -50,6 +55,7 @@ impl ArborGraph {
             name_index: HashMap::new(),
             file_index: HashMap::new(),
             centrality: HashMap::new(),
+            search_index: SearchIndex::new(),
         }
     }
 
@@ -65,8 +71,9 @@ impl ArborGraph {
 
         // Update indexes
         self.id_index.insert(id, index);
-        self.name_index.entry(name).or_default().push(index);
+        self.name_index.entry(name.clone()).or_default().push(index);
         self.file_index.entry(file).or_default().push(index);
+        self.search_index.insert(&name, index);
 
         index
     }
@@ -114,11 +121,14 @@ impl ArborGraph {
     }
 
     /// Searches for nodes whose name contains the query.
+    ///
+    /// Uses the search index for fast O(k) lookups where k is the number of matches,
+    /// instead of O(n) linear scan over all nodes.
     pub fn search(&self, query: &str) -> Vec<&CodeNode> {
-        let query_lower = query.to_lowercase();
-        self.graph
-            .node_weights()
-            .filter(|node| node.name.to_lowercase().contains(&query_lower))
+        self.search_index
+            .search(query)
+            .iter()
+            .filter_map(|id| self.graph.node_weight(*id))
             .collect()
     }
 
@@ -191,11 +201,14 @@ impl ArborGraph {
             for index in indexes {
                 if let Some(node) = self.graph.node_weight(index) {
                     // Remove from name index
-                    if let Some(name_list) = self.name_index.get_mut(&node.name) {
+                    let name = node.name.clone();
+                    if let Some(name_list) = self.name_index.get_mut(&name) {
                         name_list.retain(|&idx| idx != index);
                     }
                     // Remove from id index
                     self.id_index.remove(&node.id);
+                    // Remove from search index
+                    self.search_index.remove(&name, index);
                 }
                 self.graph.remove_node(index);
             }

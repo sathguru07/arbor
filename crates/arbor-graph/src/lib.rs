@@ -33,10 +33,13 @@ mod graph;
 mod impact;
 mod query;
 mod ranking;
+mod search_index;
 mod slice;
 
 pub mod store;
 pub mod symbol_table;
+
+pub use search_index::SearchIndex;
 
 pub use builder::GraphBuilder;
 pub use edge::{Edge, EdgeKind, GraphEdge};
